@@ -92,7 +92,9 @@ and timetable status. It runs entirely server-side (scikit-learn + statistical r
 
 `render.yaml` is a Blueprint: in Render choose **New → Blueprint**, select this repo, and it creates a
 PostgreSQL database plus the web service (Docker). The first start seeds the database from the CSV (~1 min).
-`JWT_SECRET` is generated automatically. Change the demo account passwords before sharing the URL.
+`JWT_SECRET` is generated automatically. If `DATABASE_URL` is not set, the container starts its own embedded
+PostgreSQL (works out of the box, but data resets on every redeploy/restart); set `DATABASE_URL` to an external
+database for persistent data. Change the demo account passwords before sharing the URL.
 
 ## What's real vs. simplified
 
