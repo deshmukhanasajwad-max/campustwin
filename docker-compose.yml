@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: campustwin_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: campustwin
+      POSTGRES_USER: campustwin
+      POSTGRES_PASSWORD: campustwin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campustwin -d campustwin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: campustwin_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://campustwin:campustwin@db:5432/campustwin
+      JWT_SECRET: change_this_secret_in_production
+      SEED_ON_START: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+
+volumes:
+  pgdata:

@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusTwin — Data-Driven Digital Twin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="/vendor/chart.umd.js"></script>
+<style>
+:root{
+  --bg-void:#070b14;
+  --bg-deep:#0c1424;
+  --bg-panel:#111b2e;
+  --bg-panel-2:#152238;
+  --line:#213048;
+  --line-soft:#1a2740;
+  --text-hi:#eaf1fb;
+  --text-mid:#9fb0c9;
+  --text-dim:#63769a;
+  --text-dim2:#5b6d8a;
+  --cyan:#4fd6c8;
+  --cyan-dim:#2a5c58;
+  --amber:#f2ab4d;
+  --rose:#ef6f7e;
+  --violet:#9d8cf1;
+  --grid-line:#182238;
+  --font-display:'Space Grotesk', sans-serif;
+  --font-body:'IBM Plex Sans', sans-serif;
+  --font-mono:'IBM Plex Mono', monospace;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:
+    radial-gradient(1200px 600px at 85% -10%, #10233a 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, #16233a 0%, transparent 55%),
+    var(--bg-void);
+  color:var(--text-hi);
+  font-family:var(--font-body);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px;}
+a{color:inherit;}
+button{font-family:inherit; cursor:pointer;}
+.mono{font-family:var(--font-mono);}
+
+/* ===== LOGIN ===== */
+#loginScreen{
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:24px; position:relative; overflow:hidden;
+}
+.grid-bg{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:42px 42px;
+  mask-image:radial-gradient(circle at 50% 40%, black, transparent 75%);
+  opacity:.6;
+}
+.login-card{
+  position:relative; z-index:1;
+  width:100%; max-width:920px;
+  display:grid; grid-template-columns:1.1fr 1fr;
+  background:var(--bg-panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.7);
+}
+.login-side{
+  padding:44px 40px;
+  background:linear-gradient(160deg,#0e1b30,#0a1526 70%);
+  border-right:1px solid var(--line);
+  display:flex; flex-direction:column; justify-content:space-between;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(135deg, var(--cyan), var(--violet));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-weight:700; color:#04140f; font-size:15px;
+}
+.brand-name{font-family:var(--font-display); font-weight:600; font-size:17px; letter-spacing:.2px;}
+.login-title{font-family:var(--font-display); font-size:32px; line-height:1.15; font-weight:600; margin-top:34px;}
+.login-title span{color:var(--cyan);}
+.login-sub{color:var(--text-mid); font-size:14.5px; margin-top:14px; line-height:1.6; max-width:34ch;}
+.login-stats{display:flex; gap:26px; margin-top:36px;}
+.lstat b{display:block; font-family:var(--font-mono); font-size:22px; color:var(--cyan);}
+.lstat span{font-size:11.5px; color:var(--text-dim2); text-transform:uppercase; letter-spacing:.06em;}
+.login-form{padding:44px 40px; display:flex; flex-direction:column; gap:22px;}
+.login-form h3{font-family:var(--font-display); font-size:15px; font-weight:600; color:var(--text-mid); text-transform:uppercase; letter-spacing:.08em;}
+.role-opt{
+  display:flex; align-items:center; gap:14px;
+  border:1px solid var(--line); background:var(--bg-panel-2);
+  border-radius:12px; padding:14px 16px; text-align:left;
+  transition:border-color .15s, transform .1s;
+}
+.role-opt:hover{border-color:var(--cyan-dim); transform:translateY(-1px);}
+.role-opt .ic{
+  width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:17px; flex:none;
+}
+.role-opt.admin .ic{background:rgba(79,214,200,.14); color:var(--cyan);}
+.role-opt.faculty .ic{background:rgba(157,140,241,.14); color:var(--violet);}
+.role-opt.student .ic{background:rgba(242,171,77,.14); color:var(--amber);}
+.role-opt .rt{font-family:var(--font-display); font-weight:600; font-size:14.5px;}
+.role-opt .rd{font-size:12px; color:var(--text-dim2); margin-top:2px;}
+.login-foot{font-size:11.5px; color:var(--text-dim2); margin-top:6px; line-height:1.6;}
+
+/* ===== APP SHELL ===== */
+#app{display:none; min-height:100vh; grid-template-columns:230px 1fr;}
+#app.active{display:grid;}
+.sidebar{
+  background:var(--bg-panel); border-right:1px solid var(--line);
+  padding:20px 14px; display:flex; flex-direction:column; gap:4px;
+  position:sticky; top:0; height:100vh;
+}
+.sb-brand{display:flex; align-items:center; gap:10px; padding:6px 8px 20px;}
+.sb-nav{display:flex; flex-direction:column; gap:2px; margin-top:6px;}
+.sb-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-dim2); padding:14px 10px 6px;}
+.nav-item{
+  display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:9px;
+  color:var(--text-mid); font-size:13.5px; font-weight:500; border:none; background:transparent; width:100%;
+}
+.nav-item .ic{width:17px; text-align:center; font-size:14px; opacity:.85;}
+.nav-item:hover{background:var(--bg-panel-2); color:var(--text-hi);}
+.nav-item.active{background:rgba(79,214,200,.1); color:var(--cyan);}
+.sb-foot{margin-top:auto; border-top:1px solid var(--line); padding-top:14px;}
+.user-chip{display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px;}
+.user-av{width:30px; height:30px; border-radius:8px; background:var(--bg-panel-2); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; font-family:var(--font-display); color:var(--cyan); flex:none;}
+.user-name{font-size:12.5px; font-weight:600;}
+.user-role{font-size:10.5px; color:var(--text-dim2); text-transform:capitalize;}
+.logout-btn{margin-top:8px; width:100%; text-align:left; padding:8px 10px; border-radius:9px; background:transparent; border:none; color:var(--text-dim2); font-size:12px;}
+.logout-btn:hover{color:var(--rose); background:var(--bg-panel-2);}
+
+.main{padding:26px 30px 60px; max-width:1400px;}
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+.topbar h1{font-family:var(--font-display); font-size:22px; font-weight:600;}
+.topbar .sub{color:var(--text-dim2); font-size:12.5px; margin-top:3px;}
+.top-actions{display:flex; gap:10px;}
+.btn{
+  display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:9px;
+  border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text-hi); font-size:12.5px; font-weight:500;
+}
+.btn:hover{border-color:var(--cyan-dim);}
+.btn.primary{background:linear-gradient(135deg,var(--cyan),#3ab3a6); color:#04140f; border:none; font-weight:600;}
+.btn.primary:hover{filter:brightness(1.08);}
+
+.view{display:none;}
+.view.active{display:block; animation:fade .25s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+.kpi-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:20px;}
+.kpi{
+  background:var(--bg-panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
+  position:relative; overflow:hidden;
+}
+.kpi::after{content:""; position:absolute; right:-20px; top:-20px; width:80px; height:80px; border-radius:50%; background:var(--accent,var(--cyan)); opacity:.06;}
+.kpi .kl{font-size:11px; color:var(--text-dim2); text-transform:uppercase; letter-spacing:.06em;}
+.kpi .kv{font-family:var(--font-mono); font-size:26px; font-weight:600; margin-top:8px; color:var(--text-hi);}
+.kpi .kt{font-size:11.5px; margin-top:6px; color:var(--text-mid);}
+.kpi .kt.up{color:var(--cyan);}
+.kpi .kt.warn{color:var(--amber);}
+.kpi .kt.down{color:var(--rose);}
+
+.panel{background:var(--bg-panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px;}
+.panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; flex-wrap:wrap;}
+.panel-head h3{font-family:var(--font-display); font-size:14.5px; font-weight:600;}
+.panel-head .ph-sub{font-size:11.5px; color:var(--text-dim2); margin-top:2px;}
+.grid-2{display:grid; grid-template-columns:1.3fr 1fr; gap:18px;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+@media(max-width:1000px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+.chart-wrap{position:relative; height:230px;}
+.chart-wrap.tall{height:300px;}
+
+/* twin map */
+.twin-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:12px;}
+@media(max-width:900px){.twin-grid{grid-template-columns:repeat(2,1fr);}}
+.bldg{
+  border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--bg-panel-2);
+  cursor:pointer; transition:transform .12s, border-color .12s;
+}
+.bldg:hover{transform:translateY(-2px); border-color:var(--cyan-dim);}
+.bldg.sel{border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan) inset;}
+.bldg .bn{font-family:var(--font-display); font-weight:600; font-size:12.5px;}
+.bldg .bu{font-family:var(--font-mono); font-size:19px; margin-top:8px;}
+.bldg .bar{height:5px; border-radius:3px; background:var(--bg-deep); margin-top:8px; overflow:hidden;}
+.bldg .bar i{display:block; height:100%; border-radius:3px;}
+
+.badge{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.03em;}
+.badge.ok{background:rgba(79,214,200,.14); color:var(--cyan);}
+.badge.warn{background:rgba(242,171,77,.16); color:var(--amber);}
+.badge.bad{background:rgba(239,111,126,.16); color:var(--rose);}
+.badge.mid{background:rgba(157,140,241,.16); color:var(--violet);}
+
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th{text-align:left; color:var(--text-dim2); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; padding:9px 10px; border-bottom:1px solid var(--line);}
+td{padding:10px 10px; border-bottom:1px solid var(--line-soft); color:var(--text-mid);}
+td.strong{color:var(--text-hi); font-weight:500;}
+tr.rowbtn{cursor:pointer;}
+tr.rowbtn:hover td{background:var(--bg-panel-2);}
+.util-cell{display:flex; align-items:center; gap:8px;}
+.util-track{width:56px; height:5px; border-radius:3px; background:var(--bg-deep); overflow:hidden;}
+.util-track i{display:block; height:100%;}
+
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+.toolbar input, .toolbar select{
+  background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text-hi);
+  padding:8px 12px; border-radius:9px; font-size:12.5px; font-family:inherit;
+}
+.toolbar input{flex:1; min-width:160px;}
+.pager{display:flex; align-items:center; justify-content:space-between; margin-top:12px; font-size:12px; color:var(--text-dim2);}
+.pager .pg-btns{display:flex; gap:6px;}
+.pager button{padding:6px 11px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text-hi); font-size:12px;}
+.pager button:disabled{opacity:.35; cursor:default;}
+
+.alert-item{display:flex; gap:12px; padding:12px; border:1px solid var(--line); border-radius:11px; margin-bottom:9px; align-items:flex-start;}
+.alert-item .ai-ic{width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex:none; font-size:13px;}
+.alert-item .ai-t{font-size:12.5px; font-weight:600; color:var(--text-hi);}
+.alert-item .ai-d{font-size:11.5px; color:var(--text-dim2); margin-top:2px;}
+
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr;}}
+.field label{display:block; font-size:11.5px; color:var(--text-dim2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em;}
+.field input, .field select, .field textarea{
+  width:100%; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text-hi);
+  padding:10px 12px; border-radius:9px; font-size:13px; font-family:inherit;
+}
+.field textarea{resize:vertical; min-height:70px;}
+
+.empty{text-align:center; padding:40px 20px; color:var(--text-dim2); font-size:13px;}
+.empty .ic{font-size:26px; margin-bottom:10px;}
+
+.modal-bg{display:none; position:fixed; inset:0; background:rgba(4,8,16,.65); backdrop-filter:blur(3px); z-index:50; align-items:center; justify-content:center; padding:20px;}
+.modal-bg.active{display:flex;}
+.modal{background:var(--bg-panel); border:1px solid var(--line); border-radius:16px; padding:26px; max-width:480px; width:100%; max-height:85vh; overflow:auto;}
+.modal h3{font-family:var(--font-display); font-size:17px; margin-bottom:4px;}
+.modal .mclose{position:absolute;}
+.modal-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line-soft); font-size:12.5px;}
+.modal-row span:first-child{color:var(--text-dim2);}
+.modal-row span:last-child{color:var(--text-hi); font-weight:500;}
+
+.toast{position:fixed; bottom:24px; right:24px; background:var(--bg-panel); border:1px solid var(--cyan-dim); color:var(--text-hi); padding:13px 18px; border-radius:11px; font-size:13px; box-shadow:0 12px 30px rgba(0,0,0,.4); z-index:80; display:flex; align-items:center; gap:10px; transform:translateY(20px); opacity:0; transition:all .25s;}
+.toast.show{transform:none; opacity:1;}
+.toast .tic{color:var(--cyan);}
+
+.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+.pill{padding:6px 13px; border-radius:20px; border:1px solid var(--line); background:var(--bg-panel-2); font-size:12px; color:var(--text-mid);}
+.pill.on{border-color:var(--cyan); color:var(--cyan); background:rgba(79,214,200,.08);}
+
+.list-card{border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
+.list-card .lc-t{font-weight:600; font-size:13.5px;}
+.list-card .lc-s{font-size:11.5px; color:var(--text-dim2); margin-top:3px;}
+.footer-note{font-size:11px; color:var(--text-dim2); text-align:center; margin-top:30px; line-height:1.7;}
+</style>
+<style>
+.field-error{color:var(--rose); font-size:12px; margin-top:8px; min-height:16px;}
+.login-form input{width:100%; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text-hi); padding:10px 12px; border-radius:9px; font-size:13px; font-family:inherit; margin-bottom:10px;}
+.demo-creds{font-size:11px; color:var(--text-dim2); background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; margin-top:4px; line-height:1.6;}
+.loading-row{display:flex; align-items:center; justify-content:center; padding:60px 20px; color:var(--text-dim2); font-size:13px;}
+</style>
+
+<style>
+.modal.wide{max-width:1060px; width:100%;}
+#insightsBody .grid-2{align-items:start;}
+.nav-badge{margin-left:auto; background:var(--amber); color:#1a1204; font-size:10.5px; font-weight:700; min-width:19px; height:19px; padding:0 6px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center;}
+.help{font-size:12px; color:var(--text-dim2); line-height:1.7; margin-top:12px;}
+.help code{font-family:var(--font-mono); font-size:11px; background:var(--bg-panel-2); border:1px solid var(--line); padding:1px 6px; border-radius:5px; color:var(--text-mid);}
+.field input[type=file]{padding:8px 10px;}
+.tt-meta{display:flex; flex-wrap:wrap; gap:8px 22px; font-size:12px; color:var(--text-dim2); margin:8px 0 14px;}
+.tt-meta b{color:var(--text-hi); font-weight:600;}
+.tt-note{border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:14px; background:var(--bg-panel-2);}
+.tt-table{width:100%; font-size:12px;}
+.tt-table td, .tt-table th{vertical-align:top;}
+.tt-sub{font-size:11px; color:var(--text-dim2); margin-top:3px; max-width:300px;}
+.tt-sub.warn{color:var(--amber);}
+.tt-actions{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:18px;}
+.tt-actions input{flex:1; min-width:200px; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text-hi); padding:9px 12px; border-radius:9px; font-size:12.5px; font-family:inherit;}
+.btn.danger{border-color:rgba(239,111,126,.5); color:var(--rose);}
+.btn:disabled{opacity:.5; cursor:default;}
+.chips{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+.chip{border:1px solid var(--line); border-radius:12px; padding:10px 16px; background:var(--bg-panel); min-width:110px;}
+.chip b{display:block; font-family:var(--font-mono); font-size:22px;}
+.chip span{font-size:11px; color:var(--text-dim2); text-transform:uppercase; letter-spacing:.06em;}
+.ins-act{font-size:11.5px; color:var(--cyan); margin-top:5px;}
+.ins-cat{font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim2); margin-left:8px; font-weight:500;}
+.err-box{border:1px solid rgba(239,111,126,.4); background:rgba(239,111,126,.07); color:var(--text-hi); padding:14px 16px; border-radius:11px; font-size:12.5px; line-height:1.6;}
+@media (max-width:900px){ .grid-2,.grid-3{grid-template-columns:1fr;} .form-grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen">
+  <div class="grid-bg"></div>
+  <div class="login-card">
+    <div class="login-side">
+      <div>
+        <div class="brand">
+          <div class="brand-mark">CT</div>
+          <div class="brand-name">CampusTwin</div>
+        </div>
+        <div class="login-title">A living model<br> of your <span>campus</span>,<br>built from real data.</div>
+        <div class="login-sub">Utilization, energy, bookings and predictions for every room on campus — served live from a PostgreSQL-backed API running on your machine.</div>
+      </div>
+      <div class="login-stats">
+        <div class="lstat"><b id="statRooms">—</b><span>Resources</span></div>
+        <div class="lstat"><b id="statBldg">—</b><span>Buildings</span></div>
+        <div class="lstat"><b id="statUtil">—</b><span>Avg Utilization</span></div>
+      </div>
+    </div>
+    <div class="login-form">
+      <h3>Sign in</h3>
+      <input type="email" id="loginEmail" placeholder="Email" value="admin@campustwin.app">
+      <input type="password" id="loginPassword" placeholder="Password" value="admin123">
+      <button class="btn primary" style="width:100%; justify-content:center; padding:11px;" onclick="login()">Sign in</button>
+      <div class="field-error" id="loginError"></div>
+      <div class="demo-creds">
+        <b>Demo accounts</b> (password shown, click a role to autofill):<br>
+        <a href="#" onclick="fillDemo('admin');return false;">Administrator</a> — admin@campustwin.app / admin123<br>
+        <a href="#" onclick="fillDemo('faculty');return false;">Faculty</a> — faculty@campustwin.app / faculty123<br>
+        <a href="#" onclick="fillDemo('student');return false;">Student</a> — student@campustwin.app / student123
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sb-brand"><div class="brand-mark">CT</div><div class="brand-name">CampusTwin</div></div>
+    <div class="sb-nav" id="sbNav"></div>
+    <div class="sb-foot">
+      <div class="user-chip">
+        <div class="user-av" id="uAvatar">A</div>
+        <div><div class="user-name" id="uName">Admin User</div><div class="user-role" id="uRole">administrator</div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">&larr; Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- OVERVIEW -->
+    <section class="view" id="v-overview">
+      <div class="topbar">
+        <div><h1>Campus Overview</h1><div class="sub">Live digital twin summary — computed from the database</div></div>
+        <div class="top-actions"><a class="btn" href="/api/reports/inventory">&#8595; Export CSV</a></div>
+      </div>
+      <div class="kpi-row" id="kpiRow"><div class="loading-row">Loading...</div></div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><div><h3>Utilization Trend</h3><div class="ph-sub">Monthly average utilization &amp; total energy use</div></div></div>
+          <div class="chart-wrap tall"><canvas id="chartMonthly"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h3>By Room Type</h3><div class="ph-sub">Average utilization %</div></div></div>
+          <div class="chart-wrap tall"><canvas id="chartRoomType"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><div><h3>Weekly Pattern</h3><div class="ph-sub">Utilization by day of week</div></div></div>
+          <div class="chart-wrap"><canvas id="chartDow"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h3>Booking Status Mix</h3><div class="ph-sub">Across all logged sessions</div></div></div>
+          <div class="chart-wrap"><canvas id="chartBooking"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DIGITAL TWIN -->
+    <section class="view" id="v-twin">
+      <div class="topbar"><div><h1>Digital Twin Map</h1><div class="sub">Virtual representation of campus buildings — live utilization by block</div></div></div>
+      <div class="panel"><div class="twin-grid" id="twinGrid"><div class="loading-row">Loading...</div></div></div>
+      <div class="panel" id="twinDetailPanel" style="display:none;">
+        <div class="panel-head"><div><h3 id="twinDetailTitle">Building</h3><div class="ph-sub" id="twinDetailSub"></div></div>
+          <button class="btn" onclick="closeTwinDetail()">Close</button>
+        </div>
+        <div style="max-height:340px; overflow:auto;"><table id="twinDetailTable"><thead><tr><th>Room</th><th>Type</th><th>Dept</th><th>Avg Utilization</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- RESOURCES -->
+    <section class="view" id="v-resources">
+      <div class="topbar">
+        <div><h1>Resource Registry</h1><div class="sub" id="resSub">All registered campus resources</div></div>
+        <div class="top-actions"><a class="btn" href="/api/reports/inventory">&#8595; Export CSV</a></div>
+      </div>
+      <div class="panel">
+        <div class="toolbar">
+          <input type="text" id="resSearch" placeholder="Search by room ID, building, department...">
+          <select id="resBuilding"><option value="">All buildings</option></select>
+          <select id="resType"><option value="">All room types</option></select>
+          <select id="resStatus"><option value="">Any utilization</option><option value="under">Underutilized (&lt;35%)</option><option value="normal">Normal (35–80%)</option><option value="over">Overutilized (&gt;80%)</option></select>
+        </div>
+        <div style="overflow:auto;">
+        <table>
+          <thead><tr><th>Room ID</th><th>Building</th><th>Type</th><th>Department</th><th>Capacity</th><th>Avg Utilization</th><th>Maintenance</th><th></th></tr></thead>
+          <tbody id="resTbody"><tr><td colspan="8"><div class="loading-row">Loading...</div></td></tr></tbody>
+        </table>
+        </div>
+        <div class="pager">
+          <span id="resPageInfo"></span>
+          <div class="pg-btns">
+            <button id="resPrev" onclick="resPage(-1)">&larr; Prev</button>
+            <button id="resNext" onclick="resPage(1)">Next &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOOKING -->
+    <section class="view" id="v-booking">
+      <div class="topbar"><div><h1>Book a Resource</h1><div class="sub">Real booking, checked and stored in the database</div></div></div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><h3>New booking request</h3></div>
+          <div class="form-grid">
+            <div class="field"><label>Building</label><select id="bkBuilding"></select></div>
+            <div class="field"><label>Room type</label><select id="bkType"></select></div>
+            <div class="field"><label>Date</label><input type="date" id="bkDate"></div>
+            <div class="field"><label>Time slot</label><select id="bkSlot">
+              <option>08:00-09:00</option><option>09:00-10:00</option><option>10:00-11:00</option><option>11:00-12:00</option>
+              <option>12:00-13:00</option><option>13:00-14:00</option><option>14:00-15:00</option><option>15:00-16:00</option>
+              <option>16:00-17:00</option><option>17:00-18:00</option>
+            </select></div>
+            <div class="field" style="grid-column:1/-1;"><label>Purpose</label><input type="text" id="bkPurpose" placeholder="e.g. Lab Session, Seminar, Meeting"></div>
+          </div>
+          <div style="margin-top:16px;"><button class="btn primary" onclick="submitBooking()">Check &amp; Request Booking</button></div>
+          <div class="field-error" id="bkError"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Matching resources</h3><div class="ph-sub">Lowest-utilization candidates for this building/type</div></div>
+          <div id="bkMatches"><div class="loading-row">Pick a building &amp; type</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>My bookings</h3></div>
+        <div id="myBookings"><div class="loading-row">Loading...</div></div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="view" id="v-analytics">
+      <div class="topbar"><div><h1>Utilization Analytics</h1><div class="sub">Live SQL aggregates over the raw usage log table</div></div></div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-head"><h3>By Building</h3></div><div class="chart-wrap tall"><canvas id="chartBuilding"></canvas></div></div>
+        <div class="panel"><div class="panel-head"><h3>By Department</h3></div><div class="chart-wrap tall"><canvas id="chartDept"></canvas></div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><h3>By Time Slot</h3></div><div class="chart-wrap"><canvas id="chartSlot"></canvas></div></div>
+    </section>
+
+    <!-- PREDICTIONS -->
+    <section class="view" id="v-predict">
+      <div class="topbar"><div><h1>Demand Prediction</h1><div class="sub">Real scikit-learn linear regression, computed server-side</div></div></div>
+      <div class="panel">
+        <div class="toolbar">
+          <select id="predBuilding" onchange="renderPrediction()"><option value="">All buildings (campus-wide)</option></select>
+          <select id="predMethod" onchange="renderPrediction()">
+            <option value="linear">Linear regression</option>
+            <option value="movavg">Moving average</option>
+          </select>
+        </div>
+        <div class="chart-wrap tall"><canvas id="chartPredict"></canvas></div>
+        <div id="predSummary" class="ph-sub" style="margin-top:12px;"></div>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="view" id="v-alerts">
+      <div class="topbar"><div><h1>Alerts &amp; Optimization</h1><div class="sub">Underutilized, overutilized and maintenance flags — live from the database</div></div></div>
+      <div class="grid-3">
+        <div class="panel"><div class="kpi" style="border:none; padding:0;"><div class="kl">Underutilized rooms</div><div class="kv" id="cntUnder" style="color:var(--cyan);">—</div><div class="kt">avg utilization below 35%</div></div></div>
+        <div class="panel"><div class="kpi" style="border:none; padding:0;"><div class="kl">Overutilized rooms</div><div class="kv" id="cntOver" style="color:var(--rose);">—</div><div class="kt">avg utilization above 80%</div></div></div>
+        <div class="panel"><div class="kpi" style="border:none; padding:0;"><div class="kl">Maintenance flags</div><div class="kv" id="cntMaint" style="color:var(--amber);">—</div><div class="kt">under repair / needs inspection</div></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-head"><h3>Overutilization alerts</h3></div><div id="overList"><div class="loading-row">Loading...</div></div></div>
+        <div class="panel"><div class="panel-head"><h3>Underutilization alerts</h3></div><div id="underList"><div class="loading-row">Loading...</div></div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><h3>Maintenance alerts</h3></div><div id="maintList"><div class="loading-row">Loading...</div></div></div>
+    </section>
+
+    <!-- REPORTS -->
+    <section class="view" id="v-reports">
+      <div class="topbar"><div><h1>Reports</h1><div class="sub">CSV exports streamed live from the database</div></div></div>
+      <div class="grid-3">
+        <div class="panel"><div class="panel-head"><h3>Inventory report</h3></div><p style="font-size:12px; color:var(--text-dim2); margin-bottom:14px;">Full resource list with type, building, capacity and status.</p><a class="btn primary" href="/api/reports/inventory">Download CSV</a></div>
+        <div class="panel"><div class="panel-head"><h3>Alerts report</h3></div><p style="font-size:12px; color:var(--text-dim2); margin-bottom:14px;">Underutilized and overutilized resources.</p><a class="btn primary" href="/api/reports/alerts">Download CSV</a></div>
+        <div class="panel"><div class="panel-head"><h3>All bookings</h3></div><p style="font-size:12px; color:var(--text-dim2); margin-bottom:14px;">Every booking made through the app (admin only).</p><button class="btn primary" onclick="goView('booking')">View bookings</button></div>
+      </div>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section class="view" id="v-schedule">
+      <div class="topbar"><div><h1>Facility Schedule</h1><div class="sub">Browse available classrooms &amp; labs by building</div></div></div>
+      <div class="pill-row" id="schedulePills"></div>
+      <div class="panel"><div id="scheduleList"><div class="loading-row">Loading...</div></div></div>
+    </section>
+
+    <!-- TIMETABLES -->
+    <section class="view" id="v-timetable">
+      <div class="topbar">
+        <div><h1 id="ttTitle">Timetables</h1><div class="sub" id="ttSub"></div></div>
+        <div class="top-actions"><a class="btn" href="/api/timetables/template">&#8595; Download template</a></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Upload a timetable</h3><div class="ph-sub">CSV or Excel &middot; each row is one weekly session</div></div></div>
+        <div class="form-grid">
+          <div class="field"><label>Timetable name</label><input type="text" id="ttName" placeholder="e.g. CSE Semester 5 &ndash; Odd 2026"></div>
+          <div class="field"><label>File (.csv / .xlsx)</label><input type="file" id="ttFile" accept=".csv,.xlsx,.xls,.txt"></div>
+          <div class="field"><label>Valid from</label><input type="date" id="ttFrom"></div>
+          <div class="field"><label>Valid to</label><input type="date" id="ttTo"></div>
+        </div>
+        <div style="margin-top:16px;"><button class="btn primary" id="ttUploadBtn" onclick="uploadTimetable()">Upload for approval</button></div>
+        <div class="field-error" id="ttError"></div>
+        <div class="help">
+          Columns: <code>Subject</code> <code>Faculty</code> <code>Class</code> <code>Type</code> (Class or Lab) <code>Day</code> <code>Time</code> (e.g. 09:00-11:00)
+          and optionally <code>Room</code> and <code>Building</code>. A <code>Lab</code> column (yes/no, or the lab's room ID) also works.<br>
+          Nothing is booked when you upload. Once an administrator <b>approves</b> the timetable, the requested rooms and labs are accepted and booked for every week between the two dates.
+        </div>
+      </div>
+      <div class="panel">
+        <div class="pill-row" id="ttPills"></div>
+        <div id="ttList"><div class="loading-row">Loading...</div></div>
+      </div>
+    </section>
+
+    <!-- AI INSIGHTS -->
+    <section class="view" id="v-insights">
+      <div class="topbar">
+        <div><h1>AI Insights</h1><div class="sub">Plain-language findings and actions generated from the live campus data</div></div>
+        <div class="top-actions"><button class="btn" onclick="renderInsights()">&#8635; Refresh</button></div>
+      </div>
+      <div id="insightsBody"><div class="loading-row">Analysing campus data...</div></div>
+    </section>
+
+    <div class="footer-note">CampusTwin — single-page app + FastAPI + PostgreSQL digital twin for campus resource management.</div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"><span class="tic">&#10003;</span><span id="toastMsg"></span></div>
+
+<script>
+const API = '/api';
+let TOKEN = localStorage.getItem('ct_token') || null;
+let ME = null;
+let resPageNum = 1;
+const RES_PAGE_SIZE = 20;
+let FILTERS = {buildings:[], room_types:[]};
+
+function authHeaders(){ return TOKEN ? {'Authorization':'Bearer '+TOKEN} : {}; }
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function api(path, opts={}){
+  const isForm = (typeof FormData!=='undefined') && opts.body instanceof FormData;
+  const res = await fetch(API+path, {
+    ...opts,
+    headers: {...(isForm?{}:{'Content-Type':'application/json'}), ...authHeaders(), ...(opts.headers||{})}
+  });
+  if(!res.ok){
+    let msg = 'Request failed ('+res.status+')';
+    try{ const j = await res.json(); msg = (typeof j.detail==='string'? j.detail : JSON.stringify(j.detail)) || msg; }catch(e){}
+    if(res.status===401 && TOKEN && path!=='/auth/login'){ logout(); }
+    throw new Error(msg);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function fillDemo(role){
+  const creds = {
+    admin: ['admin@campustwin.app','admin123'],
+    faculty: ['faculty@campustwin.app','faculty123'],
+    student: ['student@campustwin.app','student123'],
+  };
+  document.getElementById('loginEmail').value = creds[role][0];
+  document.getElementById('loginPassword').value = creds[role][1];
+}
+
+async function login(){
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  try{
+    const data = await api('/auth/login', {method:'POST', body: JSON.stringify({email, password})});
+    TOKEN = data.access_token;
+    localStorage.setItem('ct_token', TOKEN);
+    ME = data;
+    enterApp();
+  }catch(e){
+    errEl.textContent = e.message;
+  }
+}
+function logout(){
+  TOKEN = null; ME = null;
+  localStorage.removeItem('ct_token');
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('loginScreen').style.display='flex';
+}
+
+const NAV = {
+  administrator: [
+    {sec:'Digital Twin'}, {id:'overview', label:'Overview', ic:'&#9673;'}, {id:'twin', label:'Twin Map', ic:'&#128506;'},
+    {sec:'Manage'}, {id:'timetable', label:'Timetable Approvals', ic:'&#128467;'}, {id:'resources', label:'Resources', ic:'&#128196;'}, {id:'booking', label:'Bookings', ic:'&#128197;'},
+    {sec:'Intelligence'}, {id:'insights', label:'AI Insights', ic:'&#10024;'}, {id:'analytics', label:'Utilization', ic:'&#128200;'}, {id:'predict', label:'Predictions', ic:'&#129504;'},
+    {id:'alerts', label:'Alerts', ic:'&#9888;'}, {id:'reports', label:'Reports', ic:'&#128190;'},
+  ],
+  faculty: [
+    {sec:'Digital Twin'}, {id:'overview', label:'Overview', ic:'&#9673;'}, {id:'twin', label:'Twin Map', ic:'&#128506;'},
+    {sec:'My Work'}, {id:'timetable', label:'My Timetables', ic:'&#128467;'}, {id:'schedule', label:'Facility Schedule', ic:'&#128197;'}, {id:'booking', label:'Book a Resource', ic:'&#10133;'},
+    {sec:'Data'}, {id:'insights', label:'AI Insights', ic:'&#10024;'}, {id:'analytics', label:'Utilization', ic:'&#128200;'},
+  ],
+  student: [
+    {sec:'Digital Twin'}, {id:'overview', label:'Overview', ic:'&#9673;'}, {id:'twin', label:'Twin Map', ic:'&#128506;'},
+    {sec:'My Work'}, {id:'schedule', label:'Facilities', ic:'&#128218;'}, {id:'booking', label:'Request Resource', ic:'&#10133;'},
+  ]
+};
+
+async function enterApp(){
+  if(!ME){
+    try{ ME = await api('/auth/me'); }
+    catch(e){ logout(); return; }
+  }
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('uName').textContent = ME.name;
+  document.getElementById('uRole').textContent = ME.role;
+  document.getElementById('uAvatar').textContent = ME.name[0];
+  ttFilter = null;
+  buildNav(ME.role);
+  goView('overview');
+  loadEverything();
+  refreshTimetableBadge();
+}
+function buildNav(role){
+  const nav = document.getElementById('sbNav'); nav.innerHTML='';
+  (NAV[role]||NAV.student).forEach(item=>{
+    if(item.sec){ const d=document.createElement('div'); d.className='sb-label'; d.textContent=item.sec; nav.appendChild(d); return; }
+    const b=document.createElement('button'); b.className='nav-item'; b.id='nav-'+item.id;
+    b.innerHTML='<span class="ic">'+item.ic+'</span><span>'+item.label+'</span>';
+    b.onclick=()=>goView(item.id); nav.appendChild(b);
+  });
+}
+function goView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const v = document.getElementById('v-'+id); if(v) v.classList.add('active');
+  const n = document.getElementById('nav-'+id); if(n) n.classList.add('active');
+  if(id==='resources') renderResourceTable(1);
+  if(id==='schedule') renderSchedule();
+  if(id==='predict') renderPrediction();
+  if(id==='booking') loadMyBookings();
+  if(id==='timetable') renderTimetables();
+  if(id==='insights') renderInsights();
+}
+
+function fmtN(n){ return Number(n).toLocaleString(); }
+function utilColor(u){ return u>80? 'var(--rose)': u<35? 'var(--amber)' : 'var(--cyan)'; }
+function toast(msg){ const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function statusBadge(s){
+  if(s==='Good') return '<span class="badge ok">Good</span>';
+  if(s==='Recently Serviced') return '<span class="badge mid">Serviced</span>';
+  if(s==='Under Repair') return '<span class="badge bad">Under Repair</span>';
+  return '<span class="badge warn">Inspect</span>';
+}
+
+const chartColors = {cyan:'#4fd6c8', violet:'#9d8cf1', amber:'#f2ab4d', rose:'#ef6f7e', grid:'#182238', text:'#8fa0bd'};
+const HAS_CHART = (typeof Chart !== 'undefined');
+if(HAS_CHART){
+  Chart.defaults.color = chartColors.text;
+  Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+  Chart.defaults.font.size = 11;
+}else{
+  console.error('Chart.js failed to load - charts are disabled, the rest of the app keeps working.');
+  window.Chart = function(){ return {destroy(){}}; };   // inert stand-in so renderers never throw
+}
+let charts = {};
+function destroyChart(id){
+  if(charts[id]){ charts[id].destroy(); delete charts[id]; }
+  // also clear any instance still attached to the canvas (e.g. after a failed construction)
+  const cv = document.getElementById('chart'+id.charAt(0).toUpperCase()+id.slice(1));
+  if(cv && HAS_CHART && Chart.getChart){ const ex = Chart.getChart(cv); if(ex) ex.destroy(); }
+}
+
+async function safely(label, fn){ try{ return await fn(); }catch(e){ console.error('['+label+']', e); return null; } }
+async function loadEverything(){
+  const [overview, filters] = await Promise.all([
+    safely('overview', ()=>api('/analytics/overview')), safely('filters', ()=>api('/resources/filters')) ]);
+  if(filters){ FILTERS = filters; populateFilters(); }
+  if(overview){
+    document.getElementById('statRooms').textContent = fmtN(overview.total_rooms);
+    document.getElementById('statBldg').textContent = overview.buildings;
+    document.getElementById('statUtil').textContent = overview.avg_utilization+'%';
+    renderKPIs(overview);
+  }else{
+    document.getElementById('kpiRow').innerHTML = '<div class="err-box" style="grid-column:1/-1">Could not load the overview. Check that the server is running, then reload.</div>';
+  }
+  const calls = [['/analytics/monthly',renderMonthlyChart],['/analytics/by-room-type',renderRoomTypeChart],['/analytics/by-dow',renderDowChart],
+    ['/analytics/booking-status',renderBookingChart],['/analytics/by-building',(d)=>{renderBuildingChart(d); renderTwinGrid(d);}],
+    ['/analytics/by-department',renderDeptChart],['/analytics/by-timeslot',renderSlotChart]];
+  await Promise.all(calls.map(([path,fn])=>safely(path, async()=>fn(await api(path)))));
+  safely('alerts', loadAlerts);
+}
+
+function renderKPIs(o){
+  const kpis = [
+    {l:'Total Resources', v:fmtN(o.total_rooms), t:'across '+o.buildings+' buildings', cls:''},
+    {l:'Avg Utilization', v:o.avg_utilization+'%', t:o.avg_utilization>60?'trending high':'within normal range', cls:o.avg_utilization>60?'warn':'up'},
+    {l:'Available Now', v:fmtN(o.available), t:o.booked+' currently booked', cls:'up'},
+    {l:'Maintenance Flags', v:fmtN(o.maintenance_flags), t:'under repair / inspection', cls:'down'},
+    {l:'Total Energy Logged', v:fmtN(o.total_energy_kwh)+' kWh', t:'across all recorded sessions', cls:''},
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.map(k=>`<div class="kpi"><div class="kl">${k.l}</div><div class="kv">${k.v}</div><div class="kt ${k.cls}">${k.t}</div></div>`).join('');
+}
+
+function renderMonthlyChart(m){
+  destroyChart('monthly');
+  charts.monthly = new Chart(document.getElementById('chartMonthly'), {
+    data:{ labels:m.map(x=>x.month), datasets:[
+      {type:'bar', label:'Energy (kWh)', data:m.map(x=>x.energy), backgroundColor:'rgba(157,140,241,.35)', yAxisID:'y1', borderRadius:4, order:2},
+      {type:'line', label:'Avg Utilization %', data:m.map(x=>x.avg_util), borderColor:chartColors.cyan, backgroundColor:'rgba(79,214,200,.15)', tension:.35, fill:true, yAxisID:'y', order:1, pointRadius:3}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, scales:{ y:{position:'left', grid:{color:chartColors.grid}, title:{display:true,text:'Utilization %'}}, y1:{position:'right', grid:{display:false}, title:{display:true,text:'Energy kWh'}}, x:{grid:{display:false}} }, plugins:{legend:{position:'bottom', labels:{boxWidth:10}}}}
+  });
+}
+function renderRoomTypeChart(d){
+  const e = Object.entries(d).sort((a,b)=>b[1]-a[1]);
+  destroyChart('roomtype');
+  charts.roomtype = new Chart(document.getElementById('chartRoomType'), { type:'bar',
+    data:{labels:e.map(x=>x[0]), datasets:[{data:e.map(x=>x[1]), backgroundColor:e.map(x=>x[1]>75?chartColors.rose:x[1]<40?chartColors.amber:chartColors.cyan), borderRadius:4}]},
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:chartColors.grid}, max:100}, y:{grid:{display:false}}}}
+  });
+}
+function renderDowChart(d){
+  const e = Object.entries(d);
+  destroyChart('dow');
+  charts.dow = new Chart(document.getElementById('chartDow'), { type:'bar',
+    data:{labels:e.map(x=>x[0].slice(0,3)), datasets:[{data:e.map(x=>x[1]), backgroundColor:chartColors.violet, borderRadius:5}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{grid:{color:chartColors.grid}, max:100}, x:{grid:{display:false}}}}
+  });
+}
+function renderBookingChart(d){
+  const e = Object.entries(d);
+  destroyChart('booking');
+  charts.booking = new Chart(document.getElementById('chartBooking'), { type:'doughnut',
+    data:{labels:e.map(x=>x[0]), datasets:[{data:e.map(x=>x[1]), backgroundColor:[chartColors.cyan,chartColors.violet,chartColors.amber,chartColors.rose,'#5b6d8a'], borderColor:'#111b2e', borderWidth:3}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:9, padding:12}}}}
+  });
+}
+function renderBuildingChart(d){
+  const e = Object.entries(d).sort((a,b)=>b[1]-a[1]);
+  destroyChart('building');
+  charts.building = new Chart(document.getElementById('chartBuilding'), { type:'bar',
+    data:{labels:e.map(x=>x[0]), datasets:[{data:e.map(x=>x[1]), backgroundColor:chartColors.cyan, borderRadius:4}]},
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:chartColors.grid}, max:100}, y:{grid:{display:false}}}}
+  });
+}
+function renderDeptChart(d){
+  const e = Object.entries(d).sort((a,b)=>b[1]-a[1]);
+  destroyChart('dept');
+  charts.dept = new Chart(document.getElementById('chartDept'), { type:'bar',
+    data:{labels:e.map(x=>x[0]), datasets:[{data:e.map(x=>x[1]), backgroundColor:chartColors.amber, borderRadius:4}]},
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:chartColors.grid}, max:100}, y:{grid:{display:false}}}}
+  });
+}
+function renderSlotChart(d){
+  const e = Object.entries(d);
+  destroyChart('slot');
+  charts.slot = new Chart(document.getElementById('chartSlot'), { type:'line',
+    data:{labels:e.map(x=>x[0]), datasets:[{data:e.map(x=>x[1]), borderColor:chartColors.rose, backgroundColor:'rgba(239,111,126,.15)', fill:true, tension:.3, pointRadius:3}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{grid:{color:chartColors.grid}, max:100}, x:{grid:{display:false}}}}
+  });
+}
+
+function renderTwinGrid(byBuilding){
+  const grid = document.getElementById('twinGrid');
+  const bl = Object.entries(byBuilding).sort((a,b)=>b[1]-a[1]);
+  grid.innerHTML = bl.map(([name,util])=>{
+    const color = util>75?chartColors.rose:util<45?chartColors.amber:chartColors.cyan;
+    return `<div class="bldg" onclick="selectBuilding('${name.replace(/'/g,"\\'")}')">
+      <div class="bn">${name}</div><div class="bu" style="color:${color}">${util}%</div>
+      <div class="bar"><i style="width:${Math.min(util,100)}%; background:${color}"></i></div></div>`;
+  }).join('');
+}
+async function selectBuilding(name){
+  document.getElementById('twinDetailPanel').style.display='block';
+  document.getElementById('twinDetailTitle').textContent = name;
+  const data = await api('/resources?building='+encodeURIComponent(name)+'&page_size=100');
+  document.getElementById('twinDetailSub').textContent = data.total+' resources in this building';
+  document.querySelector('#twinDetailTable tbody').innerHTML = data.items.map(r=>`
+    <tr><td class="strong">${r.room_id}</td><td>${r.room_type}</td><td>${r.department}</td>
+    <td><div class="util-cell"><div class="util-track"><i style="width:${Math.min(r.avg_utilization,100)}%; background:${utilColor(r.avg_utilization)}"></i></div>${r.avg_utilization}%</div></td>
+    <td>${statusBadge(r.maintenance_status)}</td></tr>`).join('');
+  document.getElementById('v-twin').scrollIntoView({behavior:'smooth'});
+}
+function closeTwinDetail(){ document.getElementById('twinDetailPanel').style.display='none'; }
+
+function populateFilters(){
+  const bSel = document.getElementById('resBuilding'), tSel = document.getElementById('resType');
+  bSel.innerHTML = '<option value="">All buildings</option>' + FILTERS.buildings.map(b=>`<option value="${b}">${b}</option>`).join('');
+  tSel.innerHTML = '<option value="">All room types</option>' + FILTERS.room_types.map(t=>`<option value="${t}">${t}</option>`).join('');
+  ['resSearch'].forEach(id=>document.getElementById(id).addEventListener('input', debounce(()=>renderResourceTable(1),350)));
+  ['resBuilding','resType','resStatus'].forEach(id=>document.getElementById(id).addEventListener('change', ()=>renderResourceTable(1)));
+
+  const bkB = document.getElementById('bkBuilding'), bkT = document.getElementById('bkType');
+  bkB.innerHTML = '<option value="">Any building</option>' + FILTERS.buildings.map(b=>`<option value="${b}">${b}</option>`).join('');
+  bkT.innerHTML = '<option value="">Any type</option>' + FILTERS.room_types.map(t=>`<option value="${t}">${t}</option>`).join('');
+  bkB.onchange = renderBookingMatches; bkT.onchange = renderBookingMatches;
+  document.getElementById('bkDate').value = new Date().toISOString().slice(0,10);
+  renderBookingMatches();
+
+  const pb = document.getElementById('predBuilding');
+  pb.innerHTML = '<option value="">All buildings (campus-wide)</option>' + FILTERS.buildings.map(b=>`<option value="${b}">${b}</option>`).join('');
+}
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+async function renderResourceTable(page){
+  if(page) resPageNum = page;
+  const q = document.getElementById('resSearch').value;
+  const building = document.getElementById('resBuilding').value;
+  const room_type = document.getElementById('resType').value;
+  const status = document.getElementById('resStatus').value;
+  const params = new URLSearchParams({page:resPageNum, page_size:RES_PAGE_SIZE});
+  if(q) params.set('search', q);
+  if(building) params.set('building', building);
+  if(room_type) params.set('room_type', room_type);
+  if(status) params.set('status', status);
+  const data = await api('/resources?'+params.toString());
+  document.getElementById('resSub').textContent = fmtN(data.total)+' resources match current filters';
+  document.getElementById('resTbody').innerHTML = data.items.length ? data.items.map(r=>`
+    <tr class="rowbtn" onclick='openRoomModal(${JSON.stringify(r).replace(/'/g,"&apos;")})'>
+      <td class="strong">${r.room_id}</td><td>${r.building_name}</td><td>${r.room_type}</td><td>${r.department}</td>
+      <td>${r.capacity}</td>
+      <td><div class="util-cell"><div class="util-track"><i style="width:${Math.min(r.avg_utilization,100)}%; background:${utilColor(r.avg_utilization)}"></i></div>${r.avg_utilization}%</div></td>
+      <td>${statusBadge(r.maintenance_status)}</td><td style="color:var(--cyan); font-size:11px;">Details &rarr;</td>
+    </tr>`).join('') : `<tr><td colspan="8"><div class="empty"><div class="ic">&#128269;</div>No resources match your filters.</div></td></tr>`;
+  const totalPages = Math.max(1, Math.ceil(data.total/RES_PAGE_SIZE));
+  document.getElementById('resPageInfo').textContent = data.total? `Showing page ${resPageNum} of ${totalPages} (${fmtN(data.total)} total)` : '';
+  document.getElementById('resPrev').disabled = resPageNum<=1;
+  document.getElementById('resNext').disabled = resPageNum>=totalPages;
+}
+function resPage(dir){ renderResourceTable(resPageNum+dir); }
+
+async function openRoomModal(r){
+  const detail = await api('/resources/'+encodeURIComponent(r.room_id));
+  document.getElementById('modalBody').className = 'modal';
+  document.getElementById('modalBody').innerHTML = `
+    <h3>${r.room_id}</h3><div class="ph-sub" style="margin-bottom:14px;">${r.room_type} · ${r.building_name}</div>
+    <div class="modal-row"><span>Department</span><span>${r.department}</span></div>
+    <div class="modal-row"><span>Capacity</span><span>${r.capacity}</span></div>
+    <div class="modal-row"><span>Avg Utilization</span><span style="color:${utilColor(r.avg_utilization)}">${r.avg_utilization}%</span></div>
+    <div class="modal-row"><span>Avg Energy / session</span><span>${r.avg_energy_kwh} kWh</span></div>
+    <div class="modal-row"><span>Maintenance status</span><span>${r.maintenance_status}</span></div>
+    <div class="modal-row"><span>Current booking status</span><span>${r.booking_status}</span></div>
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button class="btn primary" onclick="closeModal(); goView('booking'); document.getElementById('bkBuilding').value='${r.building_name.replace(/'/g,"\\'")}'; renderBookingMatches();">Book this resource</button>
+      <button class="btn" onclick="closeModal()">Close</button></div>`;
+  document.getElementById('modalBg').classList.add('active');
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('active'); document.getElementById('modalBody').className='modal'; }
+
+async function renderBookingMatches(){
+  const building = document.getElementById('bkBuilding').value, room_type = document.getElementById('bkType').value;
+  const params = new URLSearchParams({page:1, page_size:6});
+  if(building) params.set('building', building);
+  if(room_type) params.set('room_type', room_type);
+  const data = await api('/resources?'+params.toString());
+  const rooms = data.items.filter(r=>r.maintenance_status!=='Under Repair');
+  document.getElementById('bkMatches').innerHTML = rooms.length ? rooms.map(r=>`
+    <div class="list-card"><div><div class="lc-t">${r.room_id} — ${r.room_type}</div><div class="lc-s">${r.building_name} · Capacity ${r.capacity} · Avg util ${r.avg_utilization}%</div></div>${statusBadge(r.maintenance_status)}</div>`).join('')
+    : `<div class="empty"><div class="ic">&#128269;</div>No available candidates for that combination.</div>`;
+}
+async function submitBooking(){
+  const errEl = document.getElementById('bkError'); errEl.textContent='';
+  const payload = {
+    building_name: document.getElementById('bkBuilding').value || null,
+    room_type: document.getElementById('bkType').value || null,
+    date: document.getElementById('bkDate').value,
+    time_slot: document.getElementById('bkSlot').value,
+    purpose: document.getElementById('bkPurpose').value || 'General use',
+  };
+  try{
+    const booking = await api('/bookings', {method:'POST', body: JSON.stringify(payload)});
+    toast('Booking confirmed for '+booking.room_id+' on '+booking.date+', '+booking.time_slot);
+    loadMyBookings();
+  }catch(e){ errEl.textContent = e.message; }
+}
+async function loadMyBookings(){
+  const data = await api('/bookings/mine');
+  const el = document.getElementById('myBookings');
+  if(!data.length){ el.innerHTML = `<div class="empty"><div class="ic">&#128197;</div>No bookings yet.</div>`; return; }
+  el.innerHTML = data.map(bk=>`
+    <div class="list-card"><div><div class="lc-t">${esc(bk.room_id)} · ${esc(bk.purpose)}</div><div class="lc-s">${bk.date} · ${bk.time_slot}</div></div>
+    <span class="badge ${bk.status==='Confirmed'?'ok':'bad'}">${bk.status}</span></div>`).join('');
+}
+
+let scheduleFilter = '';
+async function renderSchedule(){
+  const pillsEl = document.getElementById('schedulePills');
+  pillsEl.innerHTML = ['All buildings',...FILTERS.buildings].map(b=>{
+    const val = b==='All buildings' ? '' : b;
+    return `<button class="pill ${scheduleFilter===val?'on':''}" onclick="scheduleFilter='${val.replace(/'/g,"\\'")}'; renderSchedule();">${b}</button>`;
+  }).join('');
+  const params = new URLSearchParams({page:1, page_size:60});
+  if(scheduleFilter) params.set('building', scheduleFilter);
+  const data = await api('/resources?'+params.toString());
+  const rooms = data.items.filter(r=>r.maintenance_status!=='Under Repair');
+  document.getElementById('scheduleList').innerHTML = `<table><thead><tr><th>Room</th><th>Type</th><th>Building</th><th>Capacity</th><th>Typical Utilization</th><th>Status</th></tr></thead><tbody>` +
+    rooms.map(r=>`<tr><td class="strong">${r.room_id}</td><td>${r.room_type}</td><td>${r.building_name}</td><td>${r.capacity}</td>
+      <td><div class="util-cell"><div class="util-track"><i style="width:${Math.min(r.avg_utilization,100)}%; background:${utilColor(r.avg_utilization)}"></i></div>${r.avg_utilization}%</div></td>
+      <td>${r.booking_status==='Available'?'<span class="badge ok">Available</span>':'<span class="badge mid">'+r.booking_status+'</span>'}</td></tr>`).join('') + `</tbody></table>`;
+}
+
+async function loadAlerts(){
+  const data = await api('/alerts');
+  document.getElementById('cntUnder').textContent = data.counts.underutilized;
+  document.getElementById('cntOver').textContent = data.counts.overutilized;
+  document.getElementById('cntMaint').textContent = data.counts.maintenance;
+  document.getElementById('overList').innerHTML = data.overutilized.slice(0,10).map(r=>`
+    <div class="alert-item"><div class="ai-ic" style="background:rgba(239,111,126,.15); color:var(--rose)">&#9650;</div>
+    <div><div class="ai-t">${r.room_id} — ${r.avg_utilization}% avg utilization</div><div class="ai-d">${r.room_type} · ${r.building_name}</div></div></div>`).join('') || `<div class="empty">No overutilization alerts.</div>`;
+  document.getElementById('underList').innerHTML = data.underutilized.slice(0,10).map(r=>`
+    <div class="alert-item"><div class="ai-ic" style="background:rgba(242,171,77,.15); color:var(--amber)">&#9660;</div>
+    <div><div class="ai-t">${r.room_id} — ${r.avg_utilization}% avg utilization</div><div class="ai-d">${r.room_type} · ${r.building_name}</div></div></div>`).join('') || `<div class="empty">No underutilization alerts.</div>`;
+  document.getElementById('maintList').innerHTML = data.maintenance.slice(0,15).map(r=>`
+    <div class="alert-item"><div class="ai-ic" style="background:rgba(157,140,241,.15); color:var(--violet)">&#128295;</div>
+    <div><div class="ai-t">${r.room_id} — ${r.maintenance_status}</div><div class="ai-d">${r.room_type} · ${r.building_name}</div></div></div>`).join('') || `<div class="empty">No maintenance alerts.</div>`;
+}
+
+async function renderPrediction(){
+  const building = document.getElementById('predBuilding').value;
+  const method = document.getElementById('predMethod').value;
+  const params = new URLSearchParams({method});
+  if(building) params.set('building', building);
+  let data;
+  try{ data = await api('/predictions?'+params.toString()); }
+  catch(e){ document.getElementById('predSummary').innerHTML = '<div class="err-box">Could not load the forecast: '+esc(e.message)+'</div>'; return; }
+  if(!data.historical.length || !data.forecast.length){
+    destroyChart('predict');
+    document.getElementById('predSummary').textContent = 'Not enough history to forecast'+(building?' for '+building:'')+' yet (needs at least 2 months of data).';
+    return;
+  }
+  const futureLabels = data.forecast.map((_,i)=>'+'+(i+1)+' mo');
+  destroyChart('predict');
+  charts.predict = new Chart(document.getElementById('chartPredict'), {
+    type:'line',   // required - without it Chart.js throws '"undefined" is not a registered controller'
+    data:{ labels:[...data.months, ...futureLabels], datasets:[
+      {label:'Historical', data:[...data.historical, ...Array(data.forecast.length).fill(null)], borderColor:chartColors.cyan, backgroundColor:'rgba(79,214,200,.12)', fill:true, tension:.3, pointRadius:3},
+      {label:'Forecast', data:[...Array(data.historical.length-1).fill(null), data.historical[data.historical.length-1], ...data.forecast], borderColor:chartColors.amber, borderDash:[6,4], backgroundColor:'transparent', tension:.3, pointRadius:3}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, scales:{y:{grid:{color:chartColors.grid}, max:100, title:{display:true,text:'Utilization %'}}, x:{grid:{display:false}}}, plugins:{legend:{position:'bottom'}}}
+  });
+  document.getElementById('predSummary').textContent = `Forecast for ${data.building}: next ${data.forecast.length} months trending toward ${data.forecast[data.forecast.length-1]}% average utilization using ${method==='linear'?'a real scikit-learn LinearRegression model':'a 3-month moving average'} computed server-side.`;
+}
+
+// ───────────── Timetables ─────────────
+let ttFilter = null;
+const TT_BADGE = {Pending:'warn', Approved:'ok', Rejected:'bad', Cancelled:'mid'};
+const ENT_BADGE = {Allocated:'ok', Reallocated:'warn', Unallocated:'bad', Pending:'mid', Rejected:'bad'};
+function isAdmin(){ return ME && ME.role==='administrator'; }
+
+async function refreshTimetableBadge(){
+  if(!ME || ME.role!=='administrator') return;
+  const nav = document.getElementById('nav-timetable'); if(!nav) return;
+  const old = nav.querySelector('.nav-badge'); if(old) old.remove();
+  try{
+    const pending = await api('/timetables?status=Pending');
+    if(pending.length){ const b=document.createElement('span'); b.className='nav-badge'; b.textContent=pending.length; nav.appendChild(b); }
+  }catch(e){}
+}
+
+async function renderTimetables(){
+  const admin = isAdmin();
+  document.getElementById('ttTitle').textContent = admin ? 'Timetable Approvals' : 'My Timetables';
+  document.getElementById('ttSub').textContent = admin
+    ? 'Review uploaded timetables. Requested rooms and labs are booked only after you approve.'
+    : 'Upload your timetable. An administrator must approve it before rooms and labs are booked.';
+  if(!document.getElementById('ttFrom').value) document.getElementById('ttFrom').value = new Date().toISOString().slice(0,10);
+  if(!document.getElementById('ttTo').value){ const d=new Date(); d.setDate(d.getDate()+7*12-1); document.getElementById('ttTo').value = d.toISOString().slice(0,10); }
+  if(ttFilter===null) ttFilter = admin ? 'Pending' : '';
+  document.getElementById('ttPills').innerHTML = [['','All'],['Pending','Pending'],['Approved','Approved'],['Rejected','Rejected'],['Cancelled','Cancelled']]
+    .map(([v,l])=>`<button class="pill ${ttFilter===v?'on':''}" onclick="ttFilter='${v}'; renderTimetables();">${l}</button>`).join('');
+  const el = document.getElementById('ttList');
+  try{
+    const list = await api('/timetables'+(ttFilter?'?status='+ttFilter:''));
+    if(!list.length){ el.innerHTML = `<div class="empty"><div class="ic">&#128467;</div>${ttFilter?'No '+ttFilter.toLowerCase()+' timetables.':'No timetables uploaded yet.'}</div>`; return; }
+    el.innerHTML = list.map(t=>`
+      <div class="list-card"><div style="min-width:240px;flex:1">
+        <div class="lc-t">${esc(t.name)}</div>
+        <div class="lc-s">${admin?esc(t.uploaded_by||'')+' · ':''}${esc(t.valid_from)} → ${esc(t.valid_to)} · ${t.entry_count} sessions (${t.class_count} classes, ${t.lab_count} labs)${t.warning_count?' · <span style="color:var(--amber)">'+t.warning_count+' warning(s)</span>':''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="badge ${TT_BADGE[t.status]||'mid'}">${esc(t.status)}</span>
+        <button class="btn" onclick="openTimetable(${t.id})">${admin&&t.status==='Pending'?'Review':'View'}</button>
+      </div></div>`).join('');
+  }catch(e){ el.innerHTML = '<div class="err-box">Could not load timetables: '+esc(e.message)+'</div>'; }
+}
+
+async function uploadTimetable(){
+  const err = document.getElementById('ttError'); err.textContent='';
+  const name = document.getElementById('ttName').value.trim(), file = document.getElementById('ttFile').files[0];
+  if(!name){ err.textContent='Give the timetable a name.'; return; }
+  if(!file){ err.textContent='Choose a .csv or .xlsx file.'; return; }
+  const fd = new FormData();
+  fd.append('name', name); fd.append('file', file);
+  const vf = document.getElementById('ttFrom').value, vt = document.getElementById('ttTo').value;
+  if(vf) fd.append('valid_from', vf); if(vt) fd.append('valid_to', vt);
+  const btn = document.getElementById('ttUploadBtn'); btn.disabled = true; btn.textContent = 'Uploading...';
+  try{
+    const t = await api('/timetables', {method:'POST', body: fd});
+    toast('Uploaded - waiting for administrator approval');
+    document.getElementById('ttName').value=''; document.getElementById('ttFile').value='';
+    ttFilter = isAdmin() ? 'Pending' : '';
+    renderTimetables(); refreshTimetableBadge(); openTimetable(t.id);
+  }catch(e){ err.textContent = e.message; }
+  finally{ btn.disabled = false; btn.textContent = 'Upload for approval'; }
+}
+
+async function openTimetable(id){
+  let t;
+  try{ t = await api('/timetables/'+id); }catch(e){ toast(e.message); return; }
+  const admin = isAdmin(), owner = ME && t.uploaded_by_email===ME.email;
+  const counts = Object.entries(t.status_counts||{}).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(' · ');
+  const rows = t.entries.map(e=>`<tr>
+    <td class="strong">${esc(e.subject)}</td><td>${esc(e.faculty)}</td><td>${esc(e.class_name)}</td>
+    <td><span class="badge ${e.session_type==='Lab'?'mid':'ok'}">${esc(e.session_type)}</span></td>
+    <td>${esc(e.day_of_week.slice(0,3))} ${esc(e.start_time)}–${esc(e.end_time)}</td>
+    <td>${esc(e.requested_room||'—')}${e.requested_building?'<div class="tt-sub">'+esc(e.requested_building)+'</div>':''}</td>
+    <td>${e.allocated_room?'<b>'+esc(e.allocated_room)+'</b>':'—'}</td>
+    <td><span class="badge ${ENT_BADGE[e.status]||'mid'}">${esc(e.status)}</span>
+      ${e.note?'<div class="tt-sub">'+esc(e.note)+'</div>':''}${e.warning?'<div class="tt-sub warn">&#9888; '+esc(e.warning)+'</div>':''}</td></tr>`).join('');
+  let actions = '';
+  if(admin && t.status==='Pending'){
+    actions = `<div class="tt-actions"><input type="text" id="ttReviewNote" placeholder="Optional note to the uploader">
+      <button class="btn primary" id="ttApproveBtn" onclick="reviewTimetable(${t.id},'approve')">Approve &amp; allocate rooms</button>
+      <button class="btn danger" onclick="reviewTimetable(${t.id},'reject')">Reject</button></div>`;
+  }else if((admin||owner) && (t.status==='Pending'||t.status==='Approved')){
+    actions = `<div class="tt-actions"><button class="btn danger" onclick="cancelTimetable(${t.id})">${t.status==='Pending'?'Withdraw timetable':'Cancel &amp; free the rooms'}</button></div>`;
+  }
+  document.getElementById('modalBody').className = 'modal wide';
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div><h3>${esc(t.name)}</h3></div><span class="badge ${TT_BADGE[t.status]||'mid'}">${esc(t.status)}</span></div>
+    <div class="tt-meta"><span>Uploaded by <b>${esc(t.uploaded_by||'—')}</b></span><span>Valid <b>${esc(t.valid_from)}</b> → <b>${esc(t.valid_to)}</b></span>
+      <span><b>${t.entry_count}</b> sessions (${t.class_count} classes, ${t.lab_count} labs)</span>${counts?'<span>'+esc(counts)+'</span>':''}</div>
+    ${t.status==='Pending'?'<div class="tt-note">Awaiting administrator approval. Locations are <b>not booked</b> until the timetable is approved.</div>':''}
+    ${t.reviewed_by?`<div class="tt-note">${esc(t.status)} by <b>${esc(t.reviewed_by)}</b>${t.review_note?': '+esc(t.review_note):''}</div>`:''}
+    <div style="overflow:auto;max-height:52vh"><table class="tt-table"><thead><tr><th>Subject</th><th>Faculty</th><th>Class</th><th>Type</th><th>When</th><th>Requested</th><th>Allocated</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${actions}
+    <div style="margin-top:16px;"><button class="btn" onclick="closeModal()">Close</button></div>`;
+  document.getElementById('modalBg').classList.add('active');
+}
+
+async function reviewTimetable(id, action){
+  const note = (document.getElementById('ttReviewNote')||{}).value || '';
+  const btn = document.getElementById('ttApproveBtn'); if(btn){ btn.disabled = true; btn.textContent = 'Allocating rooms...'; }
+  try{
+    const r = await api('/timetables/'+id+'/'+action, {method:'POST', body: JSON.stringify({note})});
+    toast(action==='approve' ? `Approved - ${r.bookings_created} room bookings created` : 'Timetable rejected');
+    await openTimetable(id); renderTimetables(); refreshTimetableBadge();
+  }catch(e){ toast(e.message); if(btn){ btn.disabled=false; btn.textContent='Approve & allocate rooms'; } }
+}
+async function cancelTimetable(id){
+  if(!confirm('Cancel this timetable? Any rooms booked for it will be released.')) return;
+  try{
+    const r = await api('/timetables/'+id, {method:'DELETE'});
+    toast('Timetable cancelled'+(r.bookings_cancelled?' - '+r.bookings_cancelled+' bookings released':''));
+    closeModal(); renderTimetables(); refreshTimetableBadge();
+  }catch(e){ toast(e.message); }
+}
+
+// ───────────── AI Insights ─────────────
+const SEV = {critical:['&#9888;','rgba(239,111,126,.15)','var(--rose)'], warning:['&#9650;','rgba(242,171,77,.15)','var(--amber)'],
+             positive:['&#10003;','rgba(79,214,200,.15)','var(--cyan)'], info:['i','rgba(157,140,241,.15)','var(--violet)']};
+async function renderInsights(){
+  const box = document.getElementById('insightsBody');
+  box.innerHTML = '<div class="loading-row">Analysing campus data...</div>';
+  let d;
+  try{ d = await api('/insights'); }
+  catch(e){ box.innerHTML = `<div class="err-box">Could not generate insights: ${esc(e.message)}<br><button class="btn" style="margin-top:10px" onclick="renderInsights()">Try again</button></div>`; return; }
+  const chips = [['critical','Critical'],['warning','Warnings'],['positive','Good news'],['info','Info']]
+    .map(([k,l])=>`<div class="chip"><b style="color:${SEV[k][2]}">${(d.summary||{})[k]||0}</b><span>${l}</span></div>`).join('');
+  const list = d.insights.length ? d.insights.map(i=>{ const s = SEV[i.severity]||SEV.info; return `
+    <div class="alert-item"><div class="ai-ic" style="background:${s[1]}; color:${s[2]}">${s[0]}</div>
+    <div><div class="ai-t">${esc(i.title)}<span class="ins-cat">${esc(i.category)}</span></div><div class="ai-d">${esc(i.detail)}</div>
+    ${i.action?'<div class="ins-act">&rarr; '+esc(i.action)+'</div>':''}</div></div>`; }).join('')
+    : '<div class="empty">No insights yet - the database has no usage data.</div>';
+  const partial = (d.partial_errors||[]).length ? `<div class="err-box" style="margin-bottom:16px">Some sections could not be generated (${esc(d.partial_errors.join(', '))}). The rest is shown below.</div>` : '';
+  const moves = (d.reallocations||[]).length ? `
+    <div class="panel"><div class="panel-head"><div><h3>Suggested re-allocations</h3><div class="ph-sub">Move flexible sessions from an over-used room to an idle room of the same type</div></div></div>
+    <div style="overflow:auto"><table><thead><tr><th>Over-used room</th><th>Utilization</th><th></th><th>Move to</th><th>Utilization</th><th>Type</th><th>Where</th></tr></thead><tbody>` +
+    d.reallocations.map(m=>`<tr><td class="strong">${esc(m.from_room)}</td><td style="color:var(--rose)">${m.from_util}%</td><td>&rarr;</td>
+      <td class="strong">${esc(m.to_room)}</td><td style="color:var(--cyan)">${m.to_util}%</td><td>${esc(m.room_type)}</td>
+      <td>${m.same_building?'Same building ('+esc(m.building)+')':esc(m.building)+' → '+esc(m.to_building)}</td></tr>`).join('') + '</tbody></table></div></div>' : '';
+  box.innerHTML = `${partial}<div class="chips">${chips}</div>
+    <div class="grid-2"><div class="panel"><div class="panel-head"><h3>Key findings</h3></div>${list}</div>
+    <div class="panel"><div class="panel-head"><div><h3>Utilization forecast</h3><div class="ph-sub">Campus-wide, next 3 months (linear regression)</div></div></div>
+      <div class="chart-wrap tall" id="insChartWrap"><canvas id="chartInsights"></canvas></div></div></div>${moves}
+    <div class="footer-note" style="margin-top:0">Generated ${esc(new Date(d.generated_at).toLocaleString())} from the live database.</div>`;
+  const f = d.forecast, wrap = document.getElementById('insChartWrap');
+  if(!f || !f.forecast.length){ wrap.innerHTML = '<div class="empty">Not enough monthly history to forecast.</div>'; return; }
+  if(!HAS_CHART){ wrap.innerHTML = '<div class="empty">Chart library unavailable. Forecast: '+esc(f.forecast.join('%, '))+'%</div>'; return; }
+  destroyChart('insights');
+  charts.insights = new Chart(document.getElementById('chartInsights'), {
+    type:'line',
+    data:{ labels:[...f.months, ...f.forecast.map((_,i)=>'+'+(i+1)+' mo')], datasets:[
+      {type:'line', label:'Historical', data:[...f.historical, ...Array(f.forecast.length).fill(null)], borderColor:chartColors.cyan, backgroundColor:'rgba(79,214,200,.12)', fill:true, tension:.3, pointRadius:3},
+      {type:'line', label:'Forecast', data:[...Array(f.historical.length-1).fill(null), f.historical[f.historical.length-1], ...f.forecast], borderColor:chartColors.amber, borderDash:[6,4], tension:.3, pointRadius:3}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, scales:{y:{grid:{color:chartColors.grid}, max:100, title:{display:true,text:'Utilization %'}}, x:{grid:{display:false}}}, plugins:{legend:{position:'bottom'}}}
+  });
+}
+
+// Auto-login if a token is already stored
+if(TOKEN){ enterApp().catch(()=>logout()); }
+</script>
+</body>
+</html>
